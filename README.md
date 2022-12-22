@@ -1,2 +1,2 @@
 # tf_S3_access_point
-Terraform deploying an S3 Access Point &amp; Policy 
+Deploys an S3 Access Point &amp; Policy via Terraform
