@@ -2,6 +2,7 @@
 # create bucket
 resource "aws_s3_bucket" "s3_ap" {
   bucket_prefix = "s3-access-point-test"
+  force_destroy = true
 }
 
 #upload upload object to bucket
