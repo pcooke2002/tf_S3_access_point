@@ -127,12 +127,14 @@ data "aws_iam_policy_document" "jane-ap-policy" {
 resource "aws_s3control_access_point_policy" "bob-bucket-ap-policy" {
   access_point_arn = aws_s3_access_point.ap1.arn
   policy = data.aws_iam_policy_document.bob-ap-policy.json
+  depends_on = [aws_iam_user.bob] 
 }
 
 # Access Point Policy for Jane
 resource "aws_s3control_access_point_policy" "jane-bucket-ap-policy" {
   access_point_arn = aws_s3_access_point.ap2.arn
   policy = data.aws_iam_policy_document.jane-ap-policy.json
+  depends_on = [aws_iam_user.jane] 
 }
 
 # Outputs
