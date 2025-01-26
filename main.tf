@@ -1,7 +1,7 @@
 
 locals {
-  name     = "myenv"
-  region   = var.aws_region
+  name   = "myenv"
+  region = var.aws_region
   tags = {
     terraform_managed = "true"
     Environment       = "sandbox"
@@ -9,7 +9,7 @@ locals {
 }
 
 provider "aws" {
-  region = local.region
+  region = "us-east-1"
 }
 
 terraform {

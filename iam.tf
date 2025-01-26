@@ -1,11 +1,43 @@
 
 # Create some test IAM users and access keys
-resource "aws_iam_user" "bob" {
-  name = "bob"
+# Create IAM role for Bob
+resource "aws_iam_role" "bob_role" {
+  name = "bob_role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/admin1"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
   provisioner "local-exec" {
     command = "sleep 10"
   }
 }
+
+# Attach policies to the role
+resource "aws_iam_role_policy" "bob_role_policy" {
+  role = aws_iam_role.bob_role.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = ["s3:*"]
+        Resource = [
+          "${aws_s3_access_point.ap1.arn}/*",
+          "${aws_s3_access_point.ap1.arn}"
+        ]
+      }
+    ]
+  })
+}
+
 
 /*
    Local provisioners - This is because when we create a user and immediately add it into the AP policy
@@ -20,10 +52,6 @@ resource "aws_iam_user" "bob" {
 */
 
 
-resource "aws_iam_access_key" "bob" {
-  user = aws_iam_user.bob.name
-}
-
 resource "aws_iam_user" "jane" {
   name = "jane"
   provisioner "local-exec" {
@@ -35,21 +63,11 @@ resource "aws_iam_access_key" "jane" {
   user = aws_iam_user.jane.name
 }
 
-# Outputs
-output "bobs_key_id" {
-  value = aws_iam_access_key.bob.id
-}
-
-output "bobs_secret_key" {
-  value = aws_iam_access_key.bob.secret
-  sensitive = true
-}
-
 output "janes_key_id" {
   value = aws_iam_access_key.jane.id
 }
 
 output "janes_secret_key" {
-  value = aws_iam_access_key.jane.secret
+  value     = aws_iam_access_key.jane.secret
   sensitive = true
 }
