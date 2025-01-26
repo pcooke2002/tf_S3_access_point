@@ -45,7 +45,7 @@ bob_process() {
   echo "ls BOB_ACCESS_POINT/bobs_files/bobs_files recursively"
   aws s3 ls s3://${BOB_ACCESS_POINT}/bobs_files/bobsfiles --recursive
   echo "**************"
-  echo "copy s3 main to tmp"
+  echo "copy bobs s3 main to tmp"
   aws s3 cp s3://${BOB_ACCESS_POINT}/bobs_files/main.tf /tmp/main.tf.bak
   if [ -f /tmp/main.tf.bak ]; then
     echo "got file from bucket"
@@ -56,6 +56,16 @@ bob_process() {
   echo "**************"
   echo "remove bob file"
   aws s3 rm s3://${BOB_ACCESS_POINT}/bobs_files/main.tf
+
+  echo "**************"
+  echo "copy janes_files/jane_file.txt  to tmp"
+  aws s3 cp s3://${BOB_ACCESS_POINT}/janes_files/janes_file.txt /tmp/jane_file.txt
+  if [ -f /tmp/jane_file.txt ]; then
+    echo "got file from bucket"
+    rm /tmp/main.tf.bak
+  else
+    echo "copy failed"
+  fi
 }
 
 read -p "Enter AWS Account ID: " AWS_ACCOUNT_ID

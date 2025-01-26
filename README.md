@@ -1,3 +1,25 @@
+# Setting AWS variables
+To assume the bob role and use the access point.  You should have two options.  This:
+```chatinput
+eval $(aws sts assume-role --role-arn arn:aws:iam::{your account}:role/usr1-role --role-session-name usr1-session --profile admin1 --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]' --output text | awk '{print "export AWS_ACCESS_KEY_ID="$1"\nexport AWS_SECRET_ACCESS_KEY="$2"\nexport AWS_SESSION_TOKEN="$3"}')
+aws s3 cp main.tf s3://<BOB_ACCESS_POINT>/bobs_files/main.tf
+```
+unfortunately the below is not working for me, but it should.  Need more research.
+
+```
+cat ~/.aws/credentials 
+....
+[bob]
+role_arn = arn:aws:iam::<account id>:role/bob
+source_profile = admin1
+....
+`````
+and running this command
+```
+% aws s3 cp main.tf s3://${BOB_ACCESS_POINT}/bobs_files/main.tf --profile bob
+```
+
+
 # tf_s3_access_point
 Deploys an S3 Access Point use-case example via Terraform, where two IAM users have their own S3 Access Point endpoints on a single bucket with access is being restricted by prefix/folder. All S3 permissions are delegated to the S3 Access Point Policies. 
 
@@ -20,23 +42,20 @@ Tear-down the resources in the stack
 terraform destroy
 ```
 
-
-### Post deploy steps
-Run ```terraform show -json |jq .values.outputs``` to see the Terraform redacted/sensitive outputs for the IAM users, then create 2 AWSCLI profiles for these users:
-
-```
-aws configure --profile bob
-aws configure --profile jane
-```
-
 ## Testing S3 Access Point Access & Permissions
 
 Users can not see objects or perform S3 actions against the bucket directly, since the bucket policy is delegating permissions to the Access Point policies.
 
 ```
-aws s3 --profile bob  ls s3-access-point-test202301091743514197000XXXXX
-An error occurred (AccessDenied) when calling the ListObjectsV2 operation: Access Denied
+ % ./test.sh 
+Enter AWS Account ID: <your accout id> <enter>
+...... 
+lots of output
 
+```
+use AWS configure to set jane profile credentials.
+
+```
 aws s3 --profile jane  ls s3-access-point-test202301091743514197000XXXXX
 An error occurred (AccessDenied) when calling the ListObjectsV2 operation: Access Denied
 ```
@@ -44,27 +63,12 @@ An error occurred (AccessDenied) when calling the ListObjectsV2 operation: Acces
 User `Bob` can LIST, GET and PUT files via his own S3 Access Point alias(endpoint), but does not have access to Jane's files within her prefix/folder.
 
 ```
-aws s3 --profile bob ls s3://bobs-s3ap-jb5555agcnrpnba63en7uu3p1yn7qXXXXX-s3alias/bobs_files/
-bobs_file.txt
-aws s3 --profile bob cp s3://bobs-s3ap-jb5555agcnrpnba63en7uu3p1yn7qXXXXX-s3alias/bobs_files/bobs_file.txt /tmp/
-download: s3://bobs-s3ap-jb5555agcnrpnba63en7uu3p1yn7qXXXXX-s3alias/bobs_files/bobs_file.txt to /tmp/bobs_file.txt
-
+See test.sh output.
 ``` 
 
 User `Bob` doesn't have access to Jane's S3 Access point or Jane's S3 prefix/folder
 
 ```
-aws s3 --profile bob  ls s3://janes-s3ap-x7u8jipkuwuisy9ckysqu3xp6gekqXXXXX-s3alias/janes_files/      
-An error occurred (AccessDenied) when calling the ListObjectsV2 operation: Access Denied
-aws s3 --profile bob  ls s3://bobs-s3ap-jb5555agcnrpnba63en7uu3p1yn7qXXXXX-s3alias/janes_files/            
-An error occurred (AccessDenied) when calling the ListObjectsV2 operation: Access Denied
+See test.sh output.
 ```
 
-Similarly, `Jane` can LIST, GET and PUT files via her own S3 Access Point alias(endpoint), but does not have access to Bob's files within his prefix/folder.
-
-```
-aws s3 --profile jane ls s3://janes-s3ap-x7u8jipkuwuisy9ckysqu3xp6gekqXXXXX-s3alias/janes_files/
-janes_file.txt
-aws s3 --profile jane cp s3://janes-s3ap-x7u8jipkuwuisy9ckysqu3xp6gekqXXXXX-s3alias/janes_files/janes_file.txt /tmp/
-download: s3://janes-s3ap-x7u8jipkuwuisy9ckysqu3xp6gekqXXXXX-s3alias/janes_files/janes_file.txt to /tmp/janes_file.txt
-```
